@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockWorld 3D Builder</title>
+<style>
+:root{--bg:#0a0d16;--panel:rgba(18,24,40,.88);--line:rgba(151,170,220,.18);--text:#edf2ff;--muted:#9aa8c7;--accent:#8b7cff;--cyan:#54d9ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,Segoe UI,Arial;overflow:hidden}
+#app{height:100dvh;display:grid;grid-template-rows:68px 1fr}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--line);background:#0c1020;z-index:2}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#8b7cff,#46d8ff);display:grid;place-items:center;color:#101528;font-size:22px;font-weight:900;box-shadow:0 0 24px #7e76ff35}
+h1{font-size:16px;margin:0;letter-spacing:.3px}.sub{font-size:11px;color:var(--muted);margin-top:2px}.top-actions{display:flex;align-items:center;gap:9px}.pill{border:1px solid var(--line);padding:8px 11px;border-radius:10px;color:var(--muted);font-size:12px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#171e32;color:var(--text);padding:9px 12px;border-radius:10px;transition:.16s}button:hover{border-color:#8b7cff;background:#202744}button.primary{background:linear-gradient(135deg,#8b7cff,#6865f5);border:0;color:white;font-weight:700}button.danger:hover{border-color:#ff6b87;color:#ff9bad}
+main{display:grid;grid-template-columns:245px minmax(0,1fr) 250px;min-height:0}.panel{background:var(--panel);padding:17px;border-right:1px solid var(--line);overflow:auto;z-index:1}.panel.right{border-right:0;border-left:1px solid var(--line)}.section{margin-bottom:22px}.section-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#9caad0;font-weight:800;margin:0 0 12px}.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tool{padding:12px 8px;text-align:left;display:flex;gap:8px;align-items:center;min-height:50px}.tool.active{border-color:var(--accent);background:#292548;box-shadow:inset 0 0 0 1px #8b7cff45}.tool .ico{font-size:18px}.tool span:last-child{font-size:12px}.palette{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.swatch{height:34px;border-radius:9px;padding:0;border:2px solid transparent;position:relative}.swatch.selected{border-color:white;box-shadow:0 0 0 2px #8b7cff}.swatch.selected:after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font-weight:900;text-shadow:0 1px 5px #000}.hint{font-size:12px;color:var(--muted);margin-top:10px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{border:1px solid var(--line);border-radius:12px;padding:12px;background:#11182a}.stat b{display:block;font-size:21px}.stat small{font-size:11px;color:var(--muted)}.toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:12px;margin:12px 0}.toggle input{accent-color:var(--accent)}
+#viewport{position:relative;min-width:0;min-height:0;background:radial-gradient(ellipse at 50% 38%,#253354 0%,#11182b 48%,#090d18 100%)}#scene{width:100%;height:100%;display:block;outline:none}.overlay{position:absolute;pointer-events:none;left:18px;top:18px;display:flex;flex-direction:column;gap:7px}.tag{background:#0a1020c9;border:1px solid var(--line);padding:7px 10px;border-radius:9px;color:#b8c8ed;font-size:11px;backdrop-filter:blur(8px)}.crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);pointer-events:none;opacity:.7}.crosshair:before,.crosshair:after{content:"";position:absolute;background:#dce9ff}.crosshair:before{width:18px;height:1px;top:8px}.crosshair:after{height:18px;width:1px;left:8px}.toast{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:#171e32;border:1px solid var(--line);border-radius:12px;padding:10px 15px;opacity:0;transition:.25s;pointer-events:none}.toast.show{opacity:1}.bottom-bar{position:absolute;bottom:16px;right:16px;display:flex;gap:7px}.bottom-bar button{background:#0e1426dd;backdrop-filter:blur(8px)}
+#status{font-size:12px;color:var(--muted);margin-top:10px;min-height:18px}.world-name{width:100%;background:#0e1426;border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--text);margin-bottom:10px}
+footer{font-size:11px;color:#7e8baa;margin-top:18px;line-height:1.6}
+@media(max-width:950px){main{grid-template-columns:200px minmax(0,1fr)}.panel.right{display:none}}
+@media(max-width:650px){#app{grid-template-rows:60px 1fr}header{padding:0 12px}.sub,.pill{display:none}main{grid-template-columns:1fr}.panel.left{position:absolute;bottom:0;left:0;right:0;height:180px;border:0;border-top:1px solid var(--line);overflow:auto;padding:12px;background:#0d1323ee}.panel.left .section{margin-bottom:12px}.panel.left .tool-grid{grid-template-columns:repeat(4,1fr)}.panel.left .tool{min-height:40px;padding:6px;justify-content:center}.panel.left .tool span:last-child{display:none}.panel.left .palette{grid-template-columns:repeat(8,1fr)}.panel.left .swatch{height:25px}#viewport{grid-column:1;grid-row:1}.top-actions button{padding:7px 9px}.brand{gap:8px}h1{font-size:14px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="brand"><div class="logo">B</div><div><h1>BlockWorld <span style="color:#9c91ff">3D</span></h1><div class="sub">A tiny world, built one block at a time</div></div></div>
+  <div class="top-actions"><span class="pill">✦ CREATIVE MODE</span><button id="undoBtn" title="Undo last action">↶ Undo</button><button class="primary" id="saveBtn">↓ Export world</button></div>
+</header>
+<main>
+  <aside class="panel left">
+    <section class="section"><h2 class="section-title">Build tools</h2><div class="tool-grid">
+      <button class="tool active" data-tool="place"><span class="ico">▦</span><span>Place block</span></button>
+      <button class="tool" data-tool="remove"><span class="ico">⌫</span><span>Remove</span></button>
+      <button class="tool" data-tool="paint"><span class="ico">◈</span><span>Repaint</span></button>
+      <button class="tool" data-tool="inspect"><span class="ico">⌖</span><span>Inspect</span></button>
+    </div></section>
+    <section class="section"><h2 class="section-title">Block palette</h2><div class="palette" id="palette"></div><div class="hint">Choose a color, then click the world to build.</div></section>
+    <section class="section"><h2 class="section-title">Quick actions</h2><div class="row"><button id="clearBtn" class="danger">Clear world</button><button id="demoBtn">Build demo</button></div></section>
+    <footer>Tip: click a face to place a block beside it. Click empty ground to build on the grid.</footer>
+  </aside>
+  <section id="viewport">
+    <canvas id="scene" tabindex="0" aria-label="3D block building world"></canvas>
+    <div class="overlay"><div class="tag">● WORLD EDITOR <span style="color:#68e3a6">ONLINE</span></div><div class="tag" id="toolTag">TOOL · PLACE BLOCK</div></div>
+    <div class="crosshair"></div><div class="toast" id="toast">Block placed</div>
+    <div class="bottom-bar"><button id="resetCamera">⌖ Reset view</button><button id="gridBtn">▦ Grid: On</button></div>
+  </section>
+  <aside class="panel right">
+    <section class="section"><h2 class="section-title">World settings</h2><input class="world-name" id="worldName" value="My Little World" maxlength="36" aria-label="World name"/>
+      <div class="stat-grid"><div class="stat"><b id="blockCount">0</b><small>Blocks placed</small></div><div class="stat"><b id="colorCount">0</b><small>Colors used</small></div></div>
+      <label class="toggle"><span>Show grid</span><input type="checkbox" id="gridToggle" checked></label>
+      <label class="toggle"><span>Soft shadows</span><input type="checkbox" id="shadowToggle" checked></label>
+    </section>
+    <section class="section"><h2 class="section-title">Selected block</h2><div class="stat" style="margin-bottom:10px"><div class="row"><div id="selectedPreview" style="height:28px;width:28px;max-width:28px;border-radius:7px;background:#72d6a1"></div><div><b style="font-size:14px" id="selectedName">Meadow Green</b><small id="selectedHex">#72D6A1</small></div></div></div><div class="hint">Active tool: <strong id="activeToolText">Place block</strong></div></section>
+    <section class="section"><h2 class="section-title">Controls</h2><div class="hint">🖱️ Drag — orbit camera<br>🖱️ Scroll — zoom in/out<br>🖱️ Click — use selected tool<br>⌨️ Q / E — rotate view<br>⌨️ Esc — return to place mode</div></section>
+    <button id="importBtn" style="width:100%">↑ Import world JSON</button><input type="file" id="fileInput" accept=".json,application/json" hidden>
+    <div id="status"></div>
+  </aside>
+</main>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const canvas=document.querySelector('#scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#10182b'); scene.fog=new THREE.Fog('#10182b',24,58);
+const camera=new THREE.PerspectiveCamera(45,1,.1,120);
+const target=new THREE.Vector3(0,1,0); let radius=19, azimuth=Math.PI/4, elevation=.48;
+function updateCamera(){elevation=Math.max(.12,Math.min(1.35,elevation));camera.position.set(target.x+radius*Math.cos(elevation)*Math.sin(azimuth),target.y+radius*Math.sin(elevation),target.z+radius*Math.cos(elevation)*Math.cos(azimuth));camera.lookAt(target)}
+updateCamera();
+scene.add(new THREE.HemisphereLight(0xb9d8ff,0x27304c,2.1));
+const sun=new THREE.DirectionalLight(0xfff0d7,3.1);sun.position.set(-8,15,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;scene.add(sun);
+const fill=new THREE.DirectionalLight(0x748aff,1.1);fill.position.set(10,8,-8);scene.add(fill);
+const world=new THREE.Group();scene.add(world);
+const floorMat=new THREE.MeshStandardMaterial({color:'#17223a',roughness:.94});
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(100,100),floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=-.53;floor.receiveShadow=true;scene.add(floor);
+const grid=new THREE.GridHelper(30,30,'#52658c','#2b3b5d');grid.position.y=-.515;scene.add(grid);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({visible:false,side:THREE.DoubleSide}));ground.rotation.x=-Math.PI/2;ground.position.y=-.5;scene.add(ground);
+const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
+const colors=[['Meadow Green','#72d6a1'],['Sky Blue','#65baff'],['Royal Purple','#9a83ff'],['Sunset Orange','#ff9b68'],['Rose Pink','#ff7eaa'],['Lemon','#f5d76e'],['Ocean Teal','#38c9c2'],['Cloud White','#e9efff'],['Stone','#8996ad'],['Cherry Red','#f05d72'],['Wood','#ad7955'],['Night','#313c5b']];
+let selectedColor=colors[0][1], tool='place', blocks=[], undoStack=[], gridVisible=true, shadows=true, dragging=false, moved=false, lastX=0,lastY=0;
+const cubeGeo=new THREE.BoxGeometry(1,1,1);
+const materials=new Map();
+function mat(color){if(!materials.has(color))materials.set(color,new THREE.MeshStandardMaterial({color,roughness:.78,metalness:.02}));return materials.get(color)}
+function buildPalette(){const p=document.querySelector('#palette');colors.forEach(([name,color])=>{const b=document.createElement('button');b.className='swatch'+(color===selectedColor?' selected':'');b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{selectedColor=color;buildPalette();updateSelected();};p.appendChild(b)})}
+function updateSelected(){const c=colors.find(x=>x[1]===selectedColor);document.querySelector('#selectedPreview').style.background=selectedColor;document.querySelector('#selectedName').textContent=c?.[0]||'Custom';document.querySelector('#selectedHex').textContent=selectedColor.toUpperCase()}
+function key(x,y,z){return `${x},${y},${z}`}
+function findBlock(x,y,z){return blocks.find(b=>b.x===x&&b.y===y&&b.z===z)}
+function addBlock(x,y,z,color=selectedColor,record=true){if(findBlock(x,y,z))return false;const mesh=new THREE.Mesh(cubeGeo,mat(color));mesh.position.set(x,y,z);mesh.castShadow=shadows;mesh.receiveShadow=shadows;mesh.userData={x,y,z,color};world.add(mesh);blocks.push({x,y,z,color,mesh});if(record)pushUndo({type:'add',x,y,z,color});updateStats();return true}
+function removeBlock(b,record=true){if(!b)return;world.remove(b.mesh);const i=blocks.indexOf(b);if(i>=0)blocks.splice(i,1);if(record)pushUndo({type:'remove',x:b.x,y:b.y,z:b.z,color:b.color});updateStats()}
+function repaintBlock(b,color=selectedColor,record=true){if(!b)return;const old=b.color;b.color=color;b.mesh.material=mat(color);b.mesh.userData.color=color;if(record)pushUndo({type:'paint',x:b.x,y:b.y,z:b.z,old,color});updateStats()}
+function pushUndo(a){undoStack.push(a);if(undoStack.length>100)undoStack.shift()}
+function updateStats(){document.querySelector('#blockCount').textContent=blocks.length;document.querySelector('#colorCount').textContent=new Set(blocks.map(b=>b.color)).size}
+function toast(t){const el=document.querySelector('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),1300)}
+function setTool(t){tool=t;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));const label={place:'Place block',remove:'Remove block',paint:'Repaint block',inspect:'Inspect block'}[t];document.querySelector('#toolTag').textContent='TOOL · '+label.toUpperCase();document.querySelector('#activeToolText').textContent=label}
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+function resize(){const r=canvas.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(r.height,1);camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(canvas);resize();
+function pointerRay(e){const r=canvas.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera)}
+function action(e){pointerRay(e);const hits=raycaster.intersectObjects(blocks.map(b=>b.mesh),false);if(tool==='place'){if(hits.length){const hit=hits[0],p=hit.object.position.clone().add(hit.face.normal);const x=Math.round(p.x),y=Math.round(p.y),z=Math.round(p.z);if(Math.abs(x)>14||Math.abs(z)>14||y<0||y>12){toast('Build area limit reached');return}if(addBlock(x,y,z))toast('Block placed');else toast('A block is already there')}else{const g=raycaster.intersectObject(ground);if(g.length){const p=g[0].point;const x=Math.round(p.x),z=Math.round(p.z);if(Math.abs(x)<=14&&Math.abs(z)<=14){if(addBlock(x,0,z))toast('Block placed');else toast('That space is occupied')}}}}
+else if(tool==='remove'){if(hits.length){removeBlock(blocks.find(b=>b.mesh===hits[0].object));toast('Block removed')}else toast('Select a block first')}
+else if(tool==='paint'){if(hits.length){repaintBlock(blocks.find(b=>b.mesh===hits[0].object));toast('Block repainted')}else toast('Select a block first')}
+else if(tool==='inspect'){if(hits.length){const b=blocks.find(b=>b.mesh===hits[0].object);toast(`${b.color.toUpperCase()} · X ${b.x} Y ${b.y} Z ${b.z}`)}else toast('Select a block to inspect')}}
+canvas.addEventListener('pointerdown',e=>{dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;if(e.buttons){azimuth-=dx*.008;elevation+=dy*.006;updateCamera()}lastX=e.clientX;lastY=e.clientY});
+canvas.addEventListener('pointerup',e=>{if(dragging&&!moved)action(e);dragging=false});
+canvas.addEventListener('wheel',e=>{radius=Math.max(7,Math.min(38,radius+e.deltaY*.018));updateCamera()},{passive:true});
+window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='q'){azimuth-=.15;updateCamera()}if(e.key.toLowerCase()==='e'){azimuth+=.15;updateCamera()}if(e.key==='Escape')setTool('place');if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z')undo()});
+function undo(){const a=undoStack.pop();if(!a){toast('Nothing to undo');return}if(a.type==='add'){const b=findBlock(a.x,a.y,a.z);if(b)removeBlock(b,false)}else if(a.type==='remove')addBlock(a.x,a.y,a.z,a.color,false);else if(a.type==='paint'){const b=findBlock(a.x,a.y,a.z);if(b)repaintBlock(b,a.old,false)}updateStats();toast('Last action undone')}
+document.querySelector('#undoBtn').onclick=undo;
+document.querySelector('#gridBtn').onclick=()=>{gridVisible=!gridVisible;grid.visible=gridVisible;document.querySelector('#gridBtn').textContent='▦ Grid: '+(gridVisible?'On':'Off');document.querySelector('#gridToggle').checked=gridVisible};
+document.querySelector('#gridToggle').onchange=e=>{gridVisible=e.target.checked;grid.visible=gridVisible;document.querySelector('#gridBtn').textContent='▦ Grid: '+(gridVisible?'On':'Off')};
+document.querySelector('#shadowToggle').onchange=e=>{shadows=e.target.checked;sun.castShadow=shadows;blocks.forEach(b=>{b.mesh.castShadow=shadows;b.mesh.receiveShadow=shadows})};
+document.querySelector('#resetCamera').onclick=()=>{radius=19;azimuth=Math.PI/4;elevation=.48;target.set(0,1,0);updateCamera();toast('View reset')};
+function clearWorld(record=true){if(record)pushUndo({type:'clear',data:blocks.map(({x,y,z,color})=>({x,y,z,color}))});blocks.forEach(b=>world.remove(b.mesh));blocks=[];updateStats()}
+document.querySelector('#clearBtn').onclick=()=>{if(!blocks.length){toast('Your world is already empty');return}if(confirm('Clear all blocks from this world?')){clearWorld();toast('World cleared')}};
+function buildDemo(){clearWorld(false);undoStack=[];const add=(x,y,z,c)=>addBlock(x,y,z,c,false);for(let x=-4;x<=4;x++)for(let z=-3;z<=3;z++)add(x,0,z,(x+z)%4===0?'#65baff':'#72d6a1');for(let y=1;y<=4;y++){add(-2,y,-1,'#ad7955');add(-2,y,0,'#ad7955');add(2,y,1,'#ad7955');add(2,y,2,'#ad7955')}for(let x=-3;x<=-1;x++)for(let z=-2;z<=1;z++)add(x,5,z,'#ff7eaa');for(let x=1;x<=3;x++)for(let z=0;z<=3;z++)add(x,5,z,'#9a83ff');for(let x=-1;x<=1;x++)for(let z=-1;z<=1;z++)add(x,1,z,'#f5d76e');updateStats();toast('Demo world built')}
+document.querySelector('#demoBtn').onclick=buildDemo;
+document.querySelector('#saveBtn').onclick=()=>{const data={app:'BlockWorld 3D Builder',version:1,name:document.querySelector('#worldName').value||'My Little World',blocks:blocks.map(({x,y,z,color})=>({x,y,z,color}))};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(data.name.replace(/[^a-z0-9-_]/gi,'_')||'blockworld')+'.json';a.click();URL.revokeObjectURL(a.href);document.querySelector('#status').textContent='World exported successfully.';toast('World exported')};
+document.querySelector('#importBtn').onclick=()=>document.querySelector('#fileInput').click();
+document.querySelector('#fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.blocks))throw Error('Invalid world file');clearWorld(false);undoStack=[];for(const b of d.blocks){if(Number.isInteger(b.x)&&Number.isInteger(b.y)&&Number.isInteger(b.z)&&typeof b.color==='string'&&Math.abs(b.x)<=14&&Math.abs(b.z)<=14&&b.y>=0&&b.y<=12)addBlock(b.x,b.y,b.z,b.color,false)}document.querySelector('#worldName').value=String(d.name||'Imported World').slice(0,36);updateStats();document.querySelector('#status').textContent='World imported successfully.';toast('World imported')}catch(err){document.querySelector('#status').textContent='Could not import: invalid JSON world file.';toast('Import failed')}e.target.value=''};
+buildPalette();updateSelected();buildDemo();setTool('place');
+function animate(){requestAnimationFrame(animate);renderer.render(scene,camera)}animate();
+</script>
+</body>
+</html>
